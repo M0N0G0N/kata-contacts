@@ -37,10 +37,25 @@ const insertContacts = async (db) => {
   console.log('Inserting contacts ...')
   // TODO
   const contactsGenerator = generateContacts(numContacts);
-  const placeholder = [...Array(numContacts)].map(() => '(?, ?)').join(', ');
-  const contacts = [...contactsGenerator];
-  await db.run(`INSERT INTO contacts(name, email) VALUES ${contacts.map((contact)=> `("${contact[0]}", "${contact[1]}")`)}` )
-  console.log('Done inserting contacts')
+  let contactsBatch = [];
+
+  const insertBatch = async (db, contacts) => {
+    const placeholder = contacts.map(() => '(?, ?)').join(', ');
+    const values = contacts.flatMap(contact => [contact[0], contact[1]]);
+
+    await db.run(`INSERT INTO contacts(name, email) VALUES ${placeholder}`, values);
+  }
+
+  for (const contact of contactsGenerator) {
+    contactsBatch.push(contact);
+    if (contactsBatch.length >= 1000) {
+      await insertBatch(db, contactsBatch);
+      contactsBatch = [];
+    }
+  }
+  if (contactsBatch.length > 0) {
+    await insertBatch(db, contactsBatch);
+  }
 }
 
 
