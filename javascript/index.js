@@ -29,6 +29,7 @@ const migrate = async (db) => {
           email TEXT NOT NULL
         )
     `)
+  await db.run(`CREATE UNIQUE INDEX index_contacts_email ON contacts(email)`)
   console.log('Done migrating db')
 }
 
